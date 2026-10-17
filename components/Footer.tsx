@@ -69,7 +69,7 @@ export default function Footer() {
 
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/80 border border-[#FFDDDD]/80 text-[11px] font-medium text-[#293C3A] shadow-2xs">
               <Sparkles className="w-3.5 h-3.5 text-[#55A9A0]" />
-              <span>71 Karakter Kana & 180+ Kosakata Terintegrasi</span>
+              <span>104 Karakter Kana Lengkap & 180+ Kosakata</span>
             </div>
           </div>
 

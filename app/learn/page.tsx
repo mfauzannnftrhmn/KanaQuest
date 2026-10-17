@@ -21,7 +21,7 @@ export default function LearnPage() {
   const [activeTab, setActiveTab] = useState<"hiragana" | "katakana">("hiragana");
   const [searchQuery, setSearchQuery] = useState("");
   const [filterLearned, setFilterLearned] = useState<"all" | "learned" | "unlearned">("all");
-  const [filterKanaType, setFilterKanaType] = useState<"all" | "gojuon" | "dakuon" | "handakuon">("all");
+  const [filterKanaType, setFilterKanaType] = useState<"all" | "gojuon" | "dakuon" | "handakuon" | "yoon">("all");
   const [selectedKana, setSelectedKana] = useState<KanaItem | null>(null);
   const [mastery, setMastery] = useState<Record<string, boolean>>({});
 
@@ -59,7 +59,7 @@ export default function LearnPage() {
         <div>
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FFF0EF] border border-[#FFDDDD] text-xs font-semibold text-[#293C3A] mb-2">
             <Sparkles className="w-3.5 h-3.5 text-[#55A9A0]" />
-            <span>Referensi 71 Karakter Kana (Dasar 46, Tenten ゛ 20 & Maru ゜ 5)</span>
+            <span>Referensi 104 Karakter Kana Lengkap (Dasar 46, Tenten 20, Maru 5 & Yōon 33)</span>
           </div>
           <h1 className="text-3xl font-black text-[#293C3A] tracking-tight">
             Belajar Kana ({activeTab === "hiragana" ? "Hiragana ひらがな" : "Katakana カタカナ"})
@@ -153,7 +153,7 @@ export default function LearnPage() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Cari kana atau romaji (misal: ka, か)..."
+              placeholder="Cari kana atau romaji (misal: kya, きゃ, ga)..."
               className="w-full pl-9 pr-4 py-2 bg-white border border-[#FFDDDD] rounded-xl text-xs text-[#293C3A] focus:outline-none focus:ring-2 focus:ring-[#55A9A0]"
             />
           </div>
@@ -185,15 +185,16 @@ export default function LearnPage() {
         </div>
       </div>
 
-      {/* Kana Type Filter Bar (Dasar, Tenten, Maru) */}
+      {/* Kana Type Filter Bar (Dasar, Tenten, Maru, Yōon 3 Huruf) */}
       <div className="flex flex-wrap items-center gap-2 pt-1 pb-2">
         <span className="text-xs font-bold text-[#6F7775] mr-1">Kategori Huruf:</span>
         {(
           [
-            { key: "all", label: "Semua (71 Kana)" },
+            { key: "all", label: "Semua (104 Kana)" },
             { key: "gojuon", label: "Dasar / Gojuon (46)" },
-            { key: "dakuon", label: "Tenten ゛ / Dakuon (20)" },
-            { key: "handakuon", label: "Maru ゜ / Handakuon (5)" },
+            { key: "dakuon", label: "Tenten ゛ (20)" },
+            { key: "handakuon", label: "Maru ゜ (5)" },
+            { key: "yoon", label: "Yōon / 3 Huruf (33)" },
           ] as const
         ).map((g) => (
           <button

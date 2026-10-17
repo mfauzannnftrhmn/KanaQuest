@@ -79,6 +79,15 @@ export default function TypingQuizPage() {
       if (primaryRomaji === "n") acceptable.push("nn");
       if (item.id === "dji") acceptable.push("di", "dji", "ji");
       if (item.id === "dzu") acceptable.push("du", "dzu", "zu");
+      if (primaryRomaji === "sha") acceptable.push("sya");
+      if (primaryRomaji === "shu") acceptable.push("syu");
+      if (primaryRomaji === "sho") acceptable.push("syo");
+      if (primaryRomaji === "cha") acceptable.push("tya", "cya");
+      if (primaryRomaji === "chu") acceptable.push("tyu", "cyu");
+      if (primaryRomaji === "cho") acceptable.push("tyo", "cyo");
+      if (primaryRomaji === "ja") acceptable.push("jya", "zya");
+      if (primaryRomaji === "ju") acceptable.push("jyu", "zyu");
+      if (primaryRomaji === "jo") acceptable.push("jyo", "zyo");
 
       return {
         item,
