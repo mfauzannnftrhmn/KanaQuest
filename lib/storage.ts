@@ -295,6 +295,32 @@ export function toggleKanaLearned(kanaId: string): boolean {
   }
 }
 
+// Vocabulary Mastery Tracker
+const VOCAB_MASTERY_KEY = "kanaquest_vocab_mastery";
+
+export function getVocabMastery(): Record<string, boolean> {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = localStorage.getItem(VOCAB_MASTERY_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+export function toggleVocabLearned(vocabId: string): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const current = getVocabMastery();
+    const isNowLearned = !current[vocabId];
+    current[vocabId] = isNowLearned;
+    localStorage.setItem(VOCAB_MASTERY_KEY, JSON.stringify(current));
+    return isNowLearned;
+  } catch (e) {
+    return false;
+  }
+}
+
 // Achievements
 export function getAchievements(): Achievement[] {
   if (typeof window === "undefined") return ACHIEVEMENTS_LIST;

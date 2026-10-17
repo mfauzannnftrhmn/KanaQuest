@@ -606,14 +606,18 @@ export default function DashboardPage() {
 
           </div>
 
-          {/* Quick Deck link */}
-          <div className="pt-4 mt-4 border-t border-gray-100 flex items-center justify-between text-xs text-[#6F7775]">
-            <span className="flex items-center gap-1.5">
-              <Layers className="w-3.5 h-3.5 text-amber-500" />
-              <span>Flashcard 3D tersedia untuk menghafal santai</span>
-            </span>
-            <Link href="/flashcards" className="font-bold text-[#55A9A0] hover:underline flex items-center gap-1">
-              <span>Buka Flashcard</span>
+          {/* Quick Deck & Vocab link */}
+          <div className="pt-4 mt-4 border-t border-gray-100 flex flex-wrap items-center justify-between gap-2 text-xs text-[#6F7775]">
+            <Link
+              href="/vocabulary"
+              className="font-bold text-[#377770] hover:text-[#55A9A0] flex items-center gap-1.5 transition-colors cursor-pointer"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-[#55A9A0]" />
+              <span>Hafalan Kosakata Kana (単語)</span>
+            </Link>
+
+            <Link href="/flashcards" className="font-bold text-[#55A9A0] hover:underline flex items-center gap-1 cursor-pointer">
+              <span>Buka Flashcard 3D</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>

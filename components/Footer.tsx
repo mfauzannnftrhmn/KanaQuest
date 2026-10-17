@@ -29,6 +29,9 @@ export default function Footer() {
           <Link href="/flashcards" className="hover:text-[#55A9A0] transition-colors">
             Flashcards
           </Link>
+          <Link href="/vocabulary" className="hover:text-[#55A9A0] transition-colors">
+            Kosakata Kana
+          </Link>
           <Link href="/progress" className="hover:text-[#55A9A0] transition-colors">
             Statistik
           </Link>

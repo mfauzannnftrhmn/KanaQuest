@@ -68,6 +68,12 @@ export default function Navbar() {
           icon: Layers,
           desc: "Latihan hafalan bolak-balik 3D cepat.",
         },
+        {
+          name: "Kosakata Kana",
+          href: "/vocabulary",
+          icon: Sparkles,
+          desc: "Hafalan kata praktis Hiragana & Katakana.",
+        },
       ],
     },
     {
