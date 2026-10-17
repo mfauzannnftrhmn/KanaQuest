@@ -77,6 +77,8 @@ export default function TypingQuizPage() {
       if (primaryRomaji === "ji") acceptable.push("zi");
       if (primaryRomaji === "wo") acceptable.push("o");
       if (primaryRomaji === "n") acceptable.push("nn");
+      if (item.id === "dji") acceptable.push("di", "dji", "ji");
+      if (item.id === "dzu") acceptable.push("du", "dzu", "zu");
 
       return {
         item,

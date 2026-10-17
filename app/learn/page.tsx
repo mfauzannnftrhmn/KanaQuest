@@ -21,6 +21,7 @@ export default function LearnPage() {
   const [activeTab, setActiveTab] = useState<"hiragana" | "katakana">("hiragana");
   const [searchQuery, setSearchQuery] = useState("");
   const [filterLearned, setFilterLearned] = useState<"all" | "learned" | "unlearned">("all");
+  const [filterKanaType, setFilterKanaType] = useState<"all" | "gojuon" | "dakuon" | "handakuon">("all");
   const [selectedKana, setSelectedKana] = useState<KanaItem | null>(null);
   const [mastery, setMastery] = useState<Record<string, boolean>>({});
 
@@ -58,7 +59,7 @@ export default function LearnPage() {
         <div>
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FFF0EF] border border-[#FFDDDD] text-xs font-semibold text-[#293C3A] mb-2">
             <Sparkles className="w-3.5 h-3.5 text-[#55A9A0]" />
-            <span>Referensi 46 Karakter Dasar Jepang</span>
+            <span>Referensi 71 Karakter Kana (Dasar 46, Tenten ゛ 20 & Maru ゜ 5)</span>
           </div>
           <h1 className="text-3xl font-black text-[#293C3A] tracking-tight">
             Belajar Kana ({activeTab === "hiragana" ? "Hiragana ひらがな" : "Katakana カタカナ"})
@@ -184,9 +185,38 @@ export default function LearnPage() {
         </div>
       </div>
 
+      {/* Kana Type Filter Bar (Dasar, Tenten, Maru) */}
+      <div className="flex flex-wrap items-center gap-2 pt-1 pb-2">
+        <span className="text-xs font-bold text-[#6F7775] mr-1">Kategori Huruf:</span>
+        {(
+          [
+            { key: "all", label: "Semua (71 Kana)" },
+            { key: "gojuon", label: "Dasar / Gojuon (46)" },
+            { key: "dakuon", label: "Tenten ゛ / Dakuon (20)" },
+            { key: "handakuon", label: "Maru ゜ / Handakuon (5)" },
+          ] as const
+        ).map((g) => (
+          <button
+            key={g.key}
+            type="button"
+            onClick={() => setFilterKanaType(g.key)}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
+              filterKanaType === g.key
+                ? "bg-[#55A9A0] text-white shadow-xs"
+                : "bg-white border border-[#FFDDDD] text-[#293C3A] hover:bg-[#FFF0EF]"
+            }`}
+          >
+            {g.label}
+          </button>
+        ))}
+      </div>
+
       {/* Kana Grid Grouped by Rows */}
       <div className="space-y-6">
-        {ROW_GROUPS.map((row) => {
+        {ROW_GROUPS.filter((r) => {
+          if (filterKanaType === "all") return true;
+          return r.group === filterKanaType;
+        }).map((row) => {
           const rowItems = filteredKana.filter((item) => item.row === row.key);
           if (rowItems.length === 0) return null;
 

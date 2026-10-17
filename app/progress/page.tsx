@@ -239,7 +239,7 @@ export default function ProgressPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
           <div>
             <h2 className="text-lg font-bold text-[#293C3A]">
-              Peta Penguasaan 46 Karakter Dasar
+              Peta Penguasaan Seluruh Karakter Kana (71 Karakter)
             </h2>
             <p className="text-xs text-[#6F7775]">
               {totalMastered} dari {BASIC_KANA.length} karakter telah ditandai dikuasai ({masteryPercent}%).
