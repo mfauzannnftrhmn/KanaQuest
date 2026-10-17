@@ -621,7 +621,7 @@ export const GOJUON_KANA: KanaItem[] = [
   {
     id: "mo",
     romaji: "mo",
-    hiragana: "mo",
+    hiragana: "も",
     katakana: "モ",
     row: "m",
     rowName: "Baris M (Ma)",
