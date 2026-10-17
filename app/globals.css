@@ -1,0 +1,77 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --color-soft-pink: #FFDDDD;
+    --color-teal: #55A9A0;
+    --color-teal-dark: #377770;
+    --color-teal-hover: #47928a;
+    --color-teal-light: #D9EFEC;
+    --color-warm-white: #FFF8F7;
+    --color-dark-text: #293C3A;
+    --color-secondary-text: #6F7775;
+    --color-light-pink: #FFF0EF;
+    --color-sakura: #FCE7E7;
+    --color-card-border: #F0E3E1;
+  }
+
+  body {
+    background-color: var(--color-warm-white);
+    color: var(--color-dark-text);
+    font-family: var(--font-jakarta), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+}
+
+/* Custom typography classes */
+.font-japanese {
+  font-family: var(--font-noto-jp), "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif;
+}
+
+/* Glassmorphism & UI elements */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 221, 221, 0.5);
+}
+
+.card-hover {
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.card-hover:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 24px -8px rgba(85, 169, 160, 0.15), 0 4px 8px -4px rgba(255, 180, 180, 0.1);
+}
+
+/* Flashcard 3D flip */
+.perspective-1000 {
+  perspective: 1000px;
+}
+.transform-style-3d {
+  transform-style: preserve-3d;
+}
+.backface-hidden {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.rotate-y-180 {
+  transform: rotateY(180deg);
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: #FFF0EF;
+}
+::-webkit-scrollbar-thumb {
+  background: #C4E2DE;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #55A9A0;
+}
