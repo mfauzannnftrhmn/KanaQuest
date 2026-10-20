@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { Flower2 } from "lucide-react";
+import { Flower2, Sparkles } from "lucide-react";
 
 interface Petal {
   id: number;
@@ -129,8 +129,8 @@ export default function SakuraBackground() {
         </div>
       )}
 
-      {/* 2. Floating Quick Toggle Button (Bottom Left) */}
-      <div className="fixed bottom-3.5 left-3.5 sm:bottom-4 sm:left-4 z-40">
+      {/* 2. Floating Quick Controls (Bottom Left) */}
+      <div className="fixed bottom-3.5 left-14 sm:bottom-4 sm:left-14 z-40 flex items-center gap-1.5">
         <button
           type="button"
           onClick={toggleSakura}
@@ -149,6 +149,20 @@ export default function SakuraBackground() {
           <span className="hidden xs:inline">
             {isEnabled ? "Sakura: Hidup" : "Sakura: Mati"}
           </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            if (typeof window !== "undefined") {
+              window.dispatchEvent(new CustomEvent("kanaquest:replay-splash"));
+            }
+          }}
+          title="Tampilkan kembali animasi splash screen pembuka"
+          className="group flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[11px] font-bold shadow-md transition-all cursor-pointer backdrop-blur-md border bg-white/90 text-[#377770] border-[#D9EFEC] hover:bg-[#D9EFEC]/40 hover:scale-105 active:scale-95"
+        >
+          <Sparkles className="w-3.5 h-3.5 text-[#55A9A0] group-hover:rotate-12 transition-transform" />
+          <span className="hidden xs:inline">Intro</span>
         </button>
       </div>
     </>
