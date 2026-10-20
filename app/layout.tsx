@@ -3,6 +3,7 @@ import { Plus_Jakarta_Sans, Noto_Sans_JP } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import SakuraBackground from "@/components/SakuraBackground";
 
 const plusJakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -37,9 +38,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="id" className={`${plusJakarta.variable} ${notoSansJP.variable} scroll-smooth`}>
-      <body className="min-h-screen flex flex-col antialiased selection:bg-[#55A9A0] selection:text-white bg-[#FFF8F7] text-[#293C3A]">
+      <body className="min-h-screen flex flex-col antialiased selection:bg-[#55A9A0] selection:text-white bg-[#FFF8F7] text-[#293C3A] relative">
+        <SakuraBackground />
         <Navbar />
-        <main className="flex-1 w-full max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-4 sm:py-7">
+        <main className="flex-1 w-full max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-4 sm:py-7 relative z-10">
           {children}
         </main>
         <Footer />
