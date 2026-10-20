@@ -70,7 +70,14 @@ export default function LearnPage() {
         </div>
 
         {/* Quick Quiz Buttons */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <Link
+            href="/writing"
+            className="px-4 py-2.5 rounded-2xl bg-[#FFF0EF] border border-[#FFDDDD] hover:bg-[#FFDDDD] text-[#293C3A] font-bold text-xs shadow-xs transition-colors flex items-center gap-1.5"
+          >
+            <PenTool className="w-4 h-4 text-[#55A9A0]" />
+            <span>Panduan Menulis</span>
+          </Link>
           <Link
             href="/quiz/typing"
             className="px-4 py-2.5 rounded-2xl bg-white border border-[#FFDDDD] hover:bg-[#FFF0EF] text-[#293C3A] font-bold text-xs shadow-xs transition-colors flex items-center gap-1.5"

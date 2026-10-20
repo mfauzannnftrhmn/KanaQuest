@@ -63,6 +63,12 @@ export default function Navbar() {
           desc: "Tabel 46 Hiragana & Katakana, urutan goresan, audio.",
         },
         {
+          name: "Panduan Menulis",
+          href: "/writing",
+          icon: PenTool,
+          desc: "Urutan goresan benar, kanvas jiplak & kaidah Romaji.",
+        },
+        {
           name: "Flashcard Kana",
           href: "/flashcards",
           icon: Layers,
