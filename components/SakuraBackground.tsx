@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { Flower2, Sparkles } from "lucide-react";
 
 interface Petal {
   id: number;
@@ -15,32 +14,11 @@ interface Petal {
 }
 
 export default function SakuraBackground() {
-  const [isEnabled, setIsEnabled] = useState(true);
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
-    try {
-      const saved = localStorage.getItem("kanaquest_sakura_anim");
-      if (saved !== null) {
-        setIsEnabled(saved === "true");
-      }
-    } catch {
-      // LocalStorage safe
-    }
   }, []);
-
-  const toggleSakura = () => {
-    setIsEnabled((prev) => {
-      const next = !prev;
-      try {
-        localStorage.setItem("kanaquest_sakura_anim", next.toString());
-      } catch {
-        // safe
-      }
-      return next;
-    });
-  };
 
   // Generate deterministic petals array once
   const petals: Petal[] = useMemo(() => {
@@ -59,13 +37,10 @@ export default function SakuraBackground() {
   if (!isClient) return null;
 
   return (
-    <>
-      {/* 1. Subtle Floating Sakura Petals in Background */}
-      {isEnabled && (
-        <div
-          aria-hidden="true"
-          className="fixed inset-0 pointer-events-none z-0 overflow-hidden select-none"
-        >
+    <div
+      aria-hidden="true"
+      className="fixed inset-0 pointer-events-none z-0 overflow-hidden select-none"
+    >
           {petals.map((petal) => (
             <div
               key={petal.id}
@@ -127,44 +102,5 @@ export default function SakuraBackground() {
             和
           </div>
         </div>
-      )}
-
-      {/* 2. Floating Quick Controls (Bottom Left) */}
-      <div className="fixed bottom-3.5 left-14 sm:bottom-4 sm:left-14 z-40 flex items-center gap-1.5">
-        <button
-          type="button"
-          onClick={toggleSakura}
-          title={isEnabled ? "Matikan animasi kelopak sakura" : "Nyalakan animasi kelopak sakura"}
-          className={`group flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-[11px] font-bold shadow-md transition-all cursor-pointer backdrop-blur-md border ${
-            isEnabled
-              ? "bg-white/90 text-rose-600 border-rose-200 hover:bg-rose-50 hover:scale-105"
-              : "bg-white/70 text-gray-400 border-gray-200 hover:text-gray-600 hover:bg-white"
-          }`}
-        >
-          <Flower2
-            className={`w-3.5 h-3.5 transition-transform duration-500 ${
-              isEnabled ? "text-rose-500 group-hover:rotate-45" : "text-gray-400"
-            }`}
-          />
-          <span className="hidden xs:inline">
-            {isEnabled ? "Sakura: Hidup" : "Sakura: Mati"}
-          </span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => {
-            if (typeof window !== "undefined") {
-              window.dispatchEvent(new CustomEvent("kanaquest:replay-splash"));
-            }
-          }}
-          title="Tampilkan kembali animasi splash screen pembuka"
-          className="group flex items-center gap-1 px-2.5 py-1.5 rounded-full text-[11px] font-bold shadow-md transition-all cursor-pointer backdrop-blur-md border bg-white/90 text-[#377770] border-[#D9EFEC] hover:bg-[#D9EFEC]/40 hover:scale-105 active:scale-95"
-        >
-          <Sparkles className="w-3.5 h-3.5 text-[#55A9A0] group-hover:rotate-12 transition-transform" />
-          <span className="hidden xs:inline">Intro</span>
-        </button>
-      </div>
-    </>
   );
 }
