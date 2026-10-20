@@ -362,11 +362,10 @@ const StrokeOrderCanvas = forwardRef<StrokeOrderCanvasHandle, StrokeOrderCanvasP
                   type="button"
                   onClick={() => setInkColor(col.value)}
                   title={col.name}
-                  className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full transition-transform cursor-pointer shrink-0 ${
-                    inkColor === col.value
+                  className={`w-6 h-6 sm:w-7 sm:h-7 rounded-full transition-transform cursor-pointer shrink-0 ${inkColor === col.value
                       ? "ring-2 ring-offset-2 ring-[#55A9A0] scale-110"
                       : "opacity-75 hover:opacity-100"
-                  }`}
+                    }`}
                   style={{ backgroundColor: col.value }}
                 />
               ))}
@@ -379,11 +378,10 @@ const StrokeOrderCanvas = forwardRef<StrokeOrderCanvasHandle, StrokeOrderCanvasP
                   key={b.size}
                   type="button"
                   onClick={() => setStrokeWidth(b.size)}
-                  className={`px-2 py-1 rounded-md sm:rounded-lg text-[10px] sm:text-[11px] font-bold transition-all cursor-pointer ${
-                    strokeWidth === b.size
+                  className={`px-2 py-1 rounded-md sm:rounded-lg text-[10px] sm:text-[11px] font-bold transition-all cursor-pointer ${strokeWidth === b.size
                       ? "bg-white text-[#293C3A] shadow-xs"
                       : "text-gray-500 hover:text-gray-800"
-                  }`}
+                    }`}
                 >
                   {b.label}
                 </button>
@@ -399,11 +397,10 @@ const StrokeOrderCanvas = forwardRef<StrokeOrderCanvasHandle, StrokeOrderCanvasP
                 type="button"
                 onClick={() => setShowGhost(!showGhost)}
                 title={showGhost ? "Sembunyikan bayangan huruf" : "Tampilkan bayangan huruf"}
-                className={`flex items-center gap-1 px-2 sm:px-2.5 py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-semibold border transition-all cursor-pointer ${
-                  showGhost
+                className={`flex items-center gap-1 px-2 sm:px-2.5 py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-semibold border transition-all cursor-pointer ${showGhost
                     ? "bg-[#D9EFEC] text-[#377770] border-[#55A9A0]"
                     : "bg-white text-gray-500 border-gray-200 hover:bg-gray-50"
-                }`}
+                  }`}
               >
                 {showGhost ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
                 <span>Bayang</span>
@@ -414,11 +411,10 @@ const StrokeOrderCanvas = forwardRef<StrokeOrderCanvasHandle, StrokeOrderCanvasP
                 type="button"
                 onClick={() => setShowStepNumbers(!showStepNumbers)}
                 title={showStepNumbers ? "Sembunyikan nomor goresan" : "Tampilkan nomor goresan di kanvas"}
-                className={`flex items-center gap-1 px-2 sm:px-2 py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-semibold border transition-all cursor-pointer ${
-                  showStepNumbers
+                className={`flex items-center gap-1 px-2 sm:px-2 py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-semibold border transition-all cursor-pointer ${showStepNumbers
                     ? "bg-rose-50 text-rose-700 border-rose-300"
                     : "bg-white text-gray-500 border-gray-200 hover:bg-gray-50"
-                }`}
+                  }`}
               >
                 <ListOrdered className="w-3.5 h-3.5" />
                 <span className="hidden xs:inline">No.</span>
@@ -429,11 +425,10 @@ const StrokeOrderCanvas = forwardRef<StrokeOrderCanvasHandle, StrokeOrderCanvasP
                 type="button"
                 onClick={() => setShowGrid(!showGrid)}
                 title="Toggle garis kisi Genkouyoushi"
-                className={`p-1.5 rounded-lg sm:rounded-xl border transition-all cursor-pointer ${
-                  showGrid
+                className={`p-1.5 rounded-lg sm:rounded-xl border transition-all cursor-pointer ${showGrid
                     ? "bg-[#D9EFEC] text-[#377770] border-[#55A9A0]"
                     : "bg-white text-gray-500 border-gray-200 hover:bg-gray-50"
-                }`}
+                  }`}
               >
                 <Grid className="w-4 h-4" />
               </button>

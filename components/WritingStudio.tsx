@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import Link from "next/link";
 import {
   PenTool,
@@ -18,7 +18,10 @@ import {
   Award,
   Compass,
   Eye,
-  SlidersHorizontal
+  SlidersHorizontal,
+  Zap,
+  ArrowRight,
+  Loader2,
 } from "lucide-react";
 import {
   WRITING_GUIDE_KANA,
@@ -44,10 +47,13 @@ export default function WritingStudio() {
   const [animatingStep, setAnimatingStep] = useState<number | null>(null);
   const [isPlayingAnimation, setIsPlayingAnimation] = useState<boolean>(false);
   const [similarityScore, setSimilarityScore] = useState<SimilarityResult | null>(null);
+  const [autoCheckEnabled, setAutoCheckEnabled] = useState<boolean>(true);
+  const [isAutoEvaluating, setIsAutoEvaluating] = useState<boolean>(false);
   const [selectedQuizAnswers, setSelectedQuizAnswers] = useState<Record<number, number>>({});
   const [showQuizResults, setShowQuizResults] = useState<boolean>(false);
 
   const canvasRef = useRef<StrokeOrderCanvasHandle | null>(null);
+  const autoCheckTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Filter items by row
   const rowItems = WRITING_GUIDE_KANA.filter((item) => {
@@ -61,6 +67,7 @@ export default function WritingStudio() {
 
   // Handle character switch
   const handleSelectCharacter = (index: number) => {
+    if (autoCheckTimerRef.current) clearTimeout(autoCheckTimerRef.current);
     setSelectedIndex(index);
     setSimilarityScore(null);
     setIsPlayingAnimation(false);
@@ -77,6 +84,7 @@ export default function WritingStudio() {
   };
 
   const handleNextCharacter = () => {
+    if (autoCheckTimerRef.current) clearTimeout(autoCheckTimerRef.current);
     if (selectedIndex < rowItems.length - 1) {
       handleSelectCharacter(selectedIndex + 1);
     } else {
@@ -103,12 +111,34 @@ export default function WritingStudio() {
     return () => clearInterval(timer);
   }, [isPlayingAnimation, kanaData.steps.length]);
 
-  const handleEvaluateDrawing = () => {
+  const handleEvaluateDrawing = useCallback(() => {
     const canvas = canvasRef.current?.getCanvas();
     if (!canvas) return;
     const res = evaluateDrawingSimilarity(canvas, kanaData.character);
     setSimilarityScore(res);
-  };
+  }, [kanaData.character]);
+
+  const handleStrokeEnd = useCallback(() => {
+    if (similarityScore) setSimilarityScore(null);
+    if (!autoCheckEnabled) return;
+
+    if (autoCheckTimerRef.current) {
+      clearTimeout(autoCheckTimerRef.current);
+    }
+
+    // Auto-check 1100ms setelah goresan diangkat jika ada goresan
+    autoCheckTimerRef.current = setTimeout(() => {
+      const canvas = canvasRef.current?.getCanvas();
+      if (!canvas || !canvasRef.current?.hasDrawn()) return;
+
+      setIsAutoEvaluating(true);
+      setTimeout(() => {
+        const res = evaluateDrawingSimilarity(canvas, kanaData.character);
+        setSimilarityScore(res);
+        setIsAutoEvaluating(false);
+      }, 60);
+    }, 1100);
+  }, [autoCheckEnabled, similarityScore, kanaData.character]);
 
   const getStrokeTypeBadge = (type: StrokeType) => {
     switch (type) {
@@ -538,25 +568,55 @@ export default function WritingStudio() {
                   steps={kanaData.steps}
                   width={310}
                   height={310}
-                  onStrokeEnd={() => {
-                    if (similarityScore) setSimilarityScore(null);
-                  }}
+                  onStrokeEnd={handleStrokeEnd}
                 />
 
-                {/* Similarity Evaluation Button */}
-                <div className="mt-4 sm:mt-5 w-full max-w-[280px] xs:max-w-[310px] sm:max-w-[340px] space-y-2.5 sm:space-y-3">
+                {/* Similarity Evaluation Button & Auto-Check Controls */}
+                <div className="mt-3 sm:mt-4 w-full max-w-[280px] xs:max-w-[310px] sm:max-w-[340px] space-y-2 sm:space-y-2.5">
+                  {/* Auto-Check Toggle Bar */}
+                  <div className="flex items-center justify-between px-2.5 py-1.5 rounded-xl bg-white border border-[#FFDDDD] text-xs">
+                    <span className="flex items-center gap-1.5 font-bold text-[#293C3A] text-[11px] sm:text-xs">
+                      <Sparkles className="w-3.5 h-3.5 text-[#55A9A0]" />
+                      <span>Auto-Nilai Selesai Menulis</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setAutoCheckEnabled(!autoCheckEnabled)}
+                      className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out ${
+                        autoCheckEnabled ? "bg-[#55A9A0]" : "bg-gray-300"
+                      }`}
+                    >
+                      <span
+                        className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+                          autoCheckEnabled ? "translate-x-4" : "translate-x-0"
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  {/* Manual Button (if Auto-Check disabled or instant check) */}
                   <button
                     type="button"
                     onClick={handleEvaluateDrawing}
-                    className="w-full py-2.5 sm:py-3 rounded-xl sm:rounded-2xl bg-gradient-to-r from-[#55A9A0] to-[#377770] hover:from-[#47928a] hover:to-[#2e625c] text-white font-bold text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer"
+                    disabled={isAutoEvaluating}
+                    className="w-full py-2.5 rounded-xl sm:rounded-2xl bg-gradient-to-r from-[#55A9A0] to-[#377770] hover:from-[#47928a] hover:to-[#2e625c] text-white font-bold text-xs sm:text-sm shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75"
                   >
-                    <Sparkles className="w-4 h-4" />
-                    <span>Cek Kemiripan & Nilai Tulisan</span>
+                    {isAutoEvaluating ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Menilai kemiripan...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4" />
+                        <span>Cek Kemiripan & Nilai Tulisan</span>
+                      </>
+                    )}
                   </button>
 
                   {/* Similarity Result Card */}
                   {similarityScore && (
-                    <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-[#FFF0EF] border border-[#FFDDDD] animate-in fade-in duration-300">
+                    <div className="p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-[#FFF0EF] border border-[#FFDDDD] animate-in fade-in duration-300 space-y-2">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-1.5 sm:gap-2">
                           <Award className="w-4 h-4 sm:w-5 sm:h-5 text-[#55A9A0]" />
@@ -568,9 +628,21 @@ export default function WritingStudio() {
                           {similarityScore.score}%
                         </span>
                       </div>
-                      <p className="text-[11px] sm:text-xs text-[#6F7775] mt-1.5 sm:mt-2 leading-relaxed">
+                      <p className="text-[11px] sm:text-xs text-[#6F7775] leading-relaxed">
                         {similarityScore.description}
                       </p>
+
+                      {/* Fast Next Button if score >= 70% */}
+                      {similarityScore.score >= 70 && (
+                        <button
+                          type="button"
+                          onClick={handleNextCharacter}
+                          className="w-full mt-2 py-2 rounded-xl bg-[#55A9A0] hover:bg-[#377770] text-white font-black text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+                        >
+                          <span>Lanjut Karakter Berikutnya</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>

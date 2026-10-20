@@ -10,6 +10,11 @@ export interface SimilarityResult {
 const GRID_SIZE = 80;
 const PADDING = 10;
 
+/**
+ * Evaluasi penulisan standar presisi tinggi (seperti versi awal).
+ * Mengukur tingkat kemiripan proporsi, lekukan, dan ketepatan jalur goresan (IoU, Precision, Recall).
+ * Untuk mendapatkan nilai sempurna (80 - 100%), pengguna harus menuliskan karakter semirip dan serapi mungkin dengan karakter target.
+ */
 export function evaluateDrawingSimilarity(
   userCanvas: HTMLCanvasElement,
   referenceKana: string
@@ -19,7 +24,7 @@ export function evaluateDrawingSimilarity(
     return {
       score: 0,
       category: "Perlu Latihan",
-      description: "Tidak dapat mengakses canvas gambar.",
+      description: "Tidak dapat mengakses kanvas gambar.",
     };
   }
 
@@ -27,7 +32,7 @@ export function evaluateDrawingSimilarity(
   const userImgData = userCtx.getImageData(0, 0, width, height);
   const userPixels = userImgData.data;
 
-  // 1. Find bounding box of user's drawing
+  // 1. Deteksi batas goresan pengguna (bounding box)
   let minX = width;
   let minY = height;
   let maxX = 0;
@@ -38,7 +43,6 @@ export function evaluateDrawingSimilarity(
     for (let x = 0; x < width; x++) {
       const idx = (y * width + x) * 4;
       const alpha = userPixels[idx + 3];
-      // Check if pixel is drawn (alpha > 40 and not pure white)
       const r = userPixels[idx];
       const g = userPixels[idx + 1];
       const b = userPixels[idx + 2];
@@ -54,7 +58,7 @@ export function evaluateDrawingSimilarity(
     }
   }
 
-  // If practically nothing drawn
+  // Jika kanvas masih kosong atau goresan terlalu sedikit
   if (totalDrawnPixels < 30 || maxX <= minX || maxY <= minY) {
     return {
       score: 0,
@@ -63,17 +67,16 @@ export function evaluateDrawingSimilarity(
     };
   }
 
-  // 2. Offscreen canvas for normalized user drawing
+  // 2. Offscreen canvas untuk normalisasi tulisan pengguna ke GRID_SIZE
   const normUserCanvas = document.createElement("canvas");
   normUserCanvas.width = GRID_SIZE;
   normUserCanvas.height = GRID_SIZE;
   const normUserCtx = normUserCanvas.getContext("2d", { willReadFrequently: true })!;
 
-  // Fill transparent / white
   normUserCtx.fillStyle = "#ffffff";
   normUserCtx.fillRect(0, 0, GRID_SIZE, GRID_SIZE);
 
-  // Scale and center user bounding box into GRID_SIZE with PADDING
+  // Skalakan dan tempatkan di tengah grid dengan padding proporsional
   const drawnW = maxX - minX;
   const drawnH = maxY - minY;
   const maxDim = Math.max(drawnW, drawnH);
@@ -97,7 +100,7 @@ export function evaluateDrawingSimilarity(
     destH
   );
 
-  // 3. Offscreen canvas for reference Kana
+  // 3. Offscreen canvas untuk karakter referensi Kana
   const refCanvas = document.createElement("canvas");
   refCanvas.width = GRID_SIZE;
   refCanvas.height = GRID_SIZE;
@@ -112,7 +115,7 @@ export function evaluateDrawingSimilarity(
   refCtx.textBaseline = "middle";
   refCtx.fillText(referenceKana, GRID_SIZE / 2, GRID_SIZE / 2 + 2);
 
-  // 4. Compare pixels
+  // 4. Perbandingan matriks biner
   const uData = normUserCtx.getImageData(0, 0, GRID_SIZE, GRID_SIZE).data;
   const rData = refCtx.getImageData(0, 0, GRID_SIZE, GRID_SIZE).data;
 
@@ -124,17 +127,15 @@ export function evaluateDrawingSimilarity(
     rBinary[y] = [];
     for (let x = 0; x < GRID_SIZE; x++) {
       const idx = (y * GRID_SIZE + x) * 4;
-      // User is dark
       const uBrightness = (uData[idx] + uData[idx + 1] + uData[idx + 2]) / 3;
       uBinary[y][x] = uBrightness < 200 ? 1 : 0;
 
-      // Ref is dark
       const rBrightness = (rData[idx] + rData[idx + 1] + rData[idx + 2]) / 3;
       rBinary[y][x] = rBrightness < 200 ? 1 : 0;
     }
   }
 
-  // Dilate reference matrix by 2px to tolerate natural stroke thickness variance
+  // Dilatasi matriks referensi 2px untuk mentolerir ketebalan alami pena/kuas
   const rDilated: number[][] = [];
   for (let y = 0; y < GRID_SIZE; y++) {
     rDilated[y] = [];
@@ -157,7 +158,7 @@ export function evaluateDrawingSimilarity(
     }
   }
 
-  // Calculate matching metrics
+  // Hitung metrik kecocokan
   let userStrokeCount = 0;
   let refStrokeCount = 0;
   let directIntersection = 0;
@@ -187,27 +188,27 @@ export function evaluateDrawingSimilarity(
     };
   }
 
-  // Ratio of user stroke falling inside dilated reference
+  // Rasio ketepatan goresan pada jalur referensi (Precision)
   const precision = userStrokeCount > 0 ? dilatedIntersection / userStrokeCount : 0;
-  // Ratio of reference stroke covered by user
+  // Rasio kelengkapan goresan yang mencakup karakter (Recall)
   const recall = refStrokeCount > 0 ? dilatedIntersection / refStrokeCount : 0;
-  // Overlap ratio (IoU with dilation bonus)
+  // Rasio overlap bentuk (IoU)
   const iou = dilatedIntersection / (userStrokeCount + refStrokeCount - directIntersection);
 
-  // Density penalty: prevent drawing full canvas black to get high score
+  // Penalti kepadatan: mencegah coretan memblok seluruh kanvas
   const densityRatio = userStrokeCount / refStrokeCount;
   let penalty = 1.0;
   if (densityRatio > 2.2) {
-    penalty = Math.max(0.15, 2.2 / densityRatio);
+    penalty = Math.max(0.2, 2.2 / densityRatio);
   } else if (densityRatio < 0.3) {
-    penalty = Math.max(0.2, densityRatio / 0.3);
+    penalty = Math.max(0.25, densityRatio / 0.3);
   }
 
-  // Composite raw score
+  // Skor gabungan presisi: menuntut kemiripan bentuk dan proporsi yang tinggi untuk mencapai nilai sempurna
   const rawScore = (iou * 0.5 + precision * 0.3 + recall * 0.2) * 100 * penalty;
   const finalScore = Math.min(100, Math.max(0, Math.round(rawScore)));
 
-  // Determine category & description
+  // Kategori & deskripsi hasil
   let category: SimilarityResult["category"] = "Perlu Latihan";
   let description = "Bentuk tulisan belum cukup mirip dengan karakter target.";
 
@@ -222,7 +223,7 @@ export function evaluateDrawingSimilarity(
     description = "Sudah cukup terbaca, pertahankan lekukan dan proporsi garis.";
   }
 
-  // 5. Build visual overlay comparison canvas
+  // 5. Kanvas perbandingan overlay visual
   const overlayCanvas = document.createElement("canvas");
   overlayCanvas.width = GRID_SIZE * 2;
   overlayCanvas.height = GRID_SIZE * 2;
@@ -231,14 +232,14 @@ export function evaluateDrawingSimilarity(
   oCtx.fillStyle = "#FFF8F7";
   oCtx.fillRect(0, 0, overlayCanvas.width, overlayCanvas.height);
 
-  // Draw reference as soft guide in background (Teal soft)
+  // Referensi sebagai bayang-bayang panduan
   oCtx.font = `bold ${Math.round(GRID_SIZE * 1.4)}px "Noto Sans JP", sans-serif`;
   oCtx.fillStyle = "rgba(85, 169, 160, 0.35)";
   oCtx.textAlign = "center";
   oCtx.textBaseline = "middle";
   oCtx.fillText(referenceKana, GRID_SIZE, GRID_SIZE + 4);
 
-  // Draw user strokes on top scaled up
+  // Tinta pengguna di atasnya
   oCtx.drawImage(
     normUserCanvas,
     0,
