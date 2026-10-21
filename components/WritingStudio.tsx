@@ -22,6 +22,7 @@ import {
   Zap,
   ArrowRight,
   Loader2,
+  ListOrdered,
 } from "lucide-react";
 import {
   WRITING_GUIDE_KANA,
@@ -32,7 +33,7 @@ import {
   ROMAJI_WRITING_RULES,
   ROMAJI_QUIZ_DATA,
   WritingGuideItem,
-  StrokeType
+  StrokeType,
 } from "@/data/writingGuideData";
 import { speakKana } from "@/data/kanaData";
 import StrokeOrderCanvas, { StrokeOrderCanvasHandle } from "./StrokeOrderCanvas";
@@ -52,6 +53,10 @@ export default function WritingStudio() {
   const [selectedQuizAnswers, setSelectedQuizAnswers] = useState<Record<number, number>>({});
   const [showQuizResults, setShowQuizResults] = useState<boolean>(false);
 
+  // Live stroke tracking state
+  const [canvasStrokeCount, setCanvasStrokeCount] = useState<number>(0);
+  const [selectedStepNumber, setSelectedStepNumber] = useState<number | null>(null);
+
   const canvasRef = useRef<StrokeOrderCanvasHandle | null>(null);
   const autoCheckTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -65,6 +70,17 @@ export default function WritingStudio() {
   const currentItem = rowItems[selectedIndex] || rowItems[0] || WRITING_GUIDE_KANA[0];
   const kanaData = activeMainTab === "katakana" ? currentItem.katakana : currentItem.hiragana;
 
+  // Active step calculation
+  const currentActiveStep =
+    animatingStep ??
+    selectedStepNumber ??
+    (canvasStrokeCount < kanaData.steps.length
+      ? canvasStrokeCount + 1
+      : kanaData.steps.length);
+
+  const activeStepData =
+    kanaData.steps.find((s) => s.stepNumber === currentActiveStep) || kanaData.steps[0];
+
   // Handle character switch
   const handleSelectCharacter = (index: number) => {
     if (autoCheckTimerRef.current) clearTimeout(autoCheckTimerRef.current);
@@ -72,6 +88,8 @@ export default function WritingStudio() {
     setSimilarityScore(null);
     setIsPlayingAnimation(false);
     setAnimatingStep(null);
+    setSelectedStepNumber(null);
+    setCanvasStrokeCount(0);
     canvasRef.current?.clear();
   };
 
@@ -126,7 +144,7 @@ export default function WritingStudio() {
       clearTimeout(autoCheckTimerRef.current);
     }
 
-    // Auto-check 1100ms setelah goresan diangkat jika ada goresan
+    // Auto-check 1100ms after user finishes stroke
     autoCheckTimerRef.current = setTimeout(() => {
       const canvas = canvasRef.current?.getCanvas();
       if (!canvas || !canvasRef.current?.hasDrawn()) return;
@@ -175,6 +193,9 @@ export default function WritingStudio() {
               setActiveMainTab("hiragana");
               setSelectedIndex(0);
               setSimilarityScore(null);
+              setCanvasStrokeCount(0);
+              setSelectedStepNumber(null);
+              canvasRef.current?.clear();
             }}
             className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-black whitespace-nowrap transition-all cursor-pointer shrink-0 ${
               activeMainTab === "hiragana"
@@ -183,7 +204,9 @@ export default function WritingStudio() {
             }`}
           >
             <PenTool className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            <span>Hiragana <span className="hidden xs:inline font-japanese">(ひらがな)</span></span>
+            <span>
+              Hiragana <span className="hidden xs:inline font-japanese">(ひらがな)</span>
+            </span>
           </button>
 
           <button
@@ -192,6 +215,9 @@ export default function WritingStudio() {
               setActiveMainTab("katakana");
               setSelectedIndex(0);
               setSimilarityScore(null);
+              setCanvasStrokeCount(0);
+              setSelectedStepNumber(null);
+              canvasRef.current?.clear();
             }}
             className={`flex items-center gap-1.5 px-3 sm:px-4 py-2 rounded-xl sm:rounded-2xl text-xs sm:text-sm font-black whitespace-nowrap transition-all cursor-pointer shrink-0 ${
               activeMainTab === "katakana"
@@ -200,7 +226,9 @@ export default function WritingStudio() {
             }`}
           >
             <Brush className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            <span>Katakana <span className="hidden xs:inline font-japanese">(カタカナ)</span></span>
+            <span>
+              Katakana <span className="hidden xs:inline font-japanese">(カタカナ)</span>
+            </span>
           </button>
 
           <button
@@ -213,7 +241,9 @@ export default function WritingStudio() {
             }`}
           >
             <Compass className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            <span>7 Kaidah <span className="hidden xs:inline">Goresan</span></span>
+            <span>
+              7 Kaidah <span className="hidden xs:inline">Goresan</span>
+            </span>
           </button>
 
           <button
@@ -246,12 +276,14 @@ export default function WritingStudio() {
                     setSelectedRow(grp.id);
                     setSelectedIndex(0);
                     setSimilarityScore(null);
+                    setCanvasStrokeCount(0);
+                    setSelectedStepNumber(null);
                     canvasRef.current?.clear();
                   }}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all cursor-pointer shrink-0 ${
                     selectedRow === grp.id
                       ? "bg-[#293C3A] text-white shadow-xs"
-                      : "bg-white text-[#6F7775] border border-[#FFDDDD]/60 hover:bg-[#FFF0EF]"
+                      : "bg-white text-[#6F7775] border border-[#FFDDDD]/60 hover:bg-[#FFF8F7]"
                   }`}
                 >
                   {grp.label}
@@ -262,7 +294,8 @@ export default function WritingStudio() {
             {/* Character Carousel Cards */}
             <div className="flex items-center gap-2 overflow-x-auto py-1 scrollbar-thin px-0.5">
               {rowItems.map((item, idx) => {
-                const char = activeMainTab === "katakana" ? item.katakana.character : item.hiragana.character;
+                const char =
+                  activeMainTab === "katakana" ? item.katakana.character : item.hiragana.character;
                 const isSelected = idx === selectedIndex;
                 return (
                   <button
@@ -287,7 +320,98 @@ export default function WritingStudio() {
             </div>
           </div>
 
-          {/* Mobile Focus Toggle (Only on small screens: all vs canvas vs steps) */}
+          {/* Character Header Showcase - Prominently Placed at the Top */}
+          <div className="p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl bg-white border border-[#FFDDDD] shadow-xs flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+            <div className="flex items-center gap-3 sm:gap-4">
+              {/* Big Character Box */}
+              <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-2xl sm:rounded-3xl bg-gradient-to-b from-[#FFF0EF] to-[#FFDDDD]/50 border-2 border-[#FFDDDD] flex items-center justify-center shadow-xs shrink-0">
+                <span className="font-japanese font-black text-4xl sm:text-5xl text-[#293C3A]">
+                  {kanaData.character}
+                </span>
+              </div>
+
+              <div>
+                <div className="flex items-center gap-2">
+                  <h2 className="text-xl sm:text-2xl font-black text-[#293C3A] font-mono lowercase">
+                    {currentItem.romaji}
+                  </h2>
+                  <button
+                    type="button"
+                    onClick={() => speakKana(kanaData.character)}
+                    title="Dengarkan pengucapan audio"
+                    className="p-1.5 rounded-full bg-[#D9EFEC] text-[#377770] hover:bg-[#55A9A0] hover:text-white transition-colors cursor-pointer"
+                  >
+                    <Volume2 className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mt-1">
+                  <span className="px-2 sm:px-2.5 py-0.5 rounded-full bg-[#55A9A0] text-white text-[10px] sm:text-[11px] font-bold">
+                    {currentItem.rowName}
+                  </span>
+                  <span className="px-2 sm:px-2.5 py-0.5 rounded-full bg-[#FFF0EF] text-[#293C3A] border border-[#FFDDDD] text-[10px] sm:text-[11px] font-bold">
+                    {kanaData.strokes} Goresan
+                  </span>
+                </div>
+
+                <p className="text-[11px] sm:text-xs text-[#6F7775] mt-1">
+                  Aksara:{" "}
+                  <span className="font-japanese font-bold text-[#293C3A]">
+                    {activeMainTab === "hiragana"
+                      ? currentItem.katakana.character
+                      : currentItem.hiragana.character}
+                  </span>{" "}
+                  ({activeMainTab === "hiragana" ? "Katakana" : "Hiragana"})
+                </p>
+              </div>
+            </div>
+
+            {/* Animation & Nav controls */}
+            <div className="flex items-center justify-between sm:justify-end gap-2 pt-2.5 sm:pt-0 border-t sm:border-t-0 border-[#FFDDDD]/40">
+              <button
+                type="button"
+                onClick={() => setIsPlayingAnimation(!isPlayingAnimation)}
+                className={`flex items-center gap-1.5 px-3 py-2 rounded-xl sm:rounded-2xl text-xs font-bold transition-all shadow-xs cursor-pointer ${
+                  isPlayingAnimation
+                    ? "bg-rose-500 text-white animate-pulse"
+                    : "bg-[#D9EFEC] text-[#377770] hover:bg-[#55A9A0] hover:text-white"
+                }`}
+              >
+                {isPlayingAnimation ? (
+                  <>
+                    <Pause className="w-3.5 h-3.5" />
+                    <span>Jeda Animasi</span>
+                  </>
+                ) : (
+                  <>
+                    <Play className="w-3.5 h-3.5 fill-current" />
+                    <span>Putar Urutan</span>
+                  </>
+                )}
+              </button>
+
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={handlePrevCharacter}
+                  className="p-2 rounded-xl bg-gray-100 hover:bg-[#FFF0EF] text-[#293C3A] transition-colors cursor-pointer"
+                  title="Karakter Sebelumnya"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <button
+                  type="button"
+                  onClick={handleNextCharacter}
+                  className="p-2 rounded-xl bg-gray-100 hover:bg-[#FFF0EF] text-[#293C3A] transition-colors cursor-pointer"
+                  title="Karakter Berikutnya"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Mobile View Filter Tabs (Focused Canvas vs Full Worksheet) */}
           <div className="lg:hidden flex items-center justify-center p-1 rounded-xl bg-gray-100 border border-gray-200">
             <button
               type="button"
@@ -298,18 +422,7 @@ export default function WritingStudio() {
                   : "text-[#6F7775]"
               }`}
             >
-              Semua Tampilan
-            </button>
-            <button
-              type="button"
-              onClick={() => setMobileStudioView("steps")}
-              className={`flex-1 py-1.5 text-center text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                mobileStudioView === "steps"
-                  ? "bg-white text-[#293C3A] shadow-xs"
-                  : "text-[#6F7775]"
-              }`}
-            >
-              📖 Langkah
+              ✨ Semua Tampilan
             </button>
             <button
               type="button"
@@ -322,256 +435,113 @@ export default function WritingStudio() {
             >
               ✍️ Kanvas Latihan
             </button>
+            <button
+              type="button"
+              onClick={() => setMobileStudioView("steps")}
+              className={`flex-1 py-1.5 text-center text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                mobileStudioView === "steps"
+                  ? "bg-white text-[#293C3A] shadow-xs"
+                  : "text-[#6F7775]"
+              }`}
+            >
+              📖 Rincian Langkah
+            </button>
           </div>
 
-          {/* Main Studio Grid: Left (Stroke Breakdown & Tips) & Right (Interactive Canvas) */}
+          {/* Main Studio Grid: Ordered so Canvas is top on Mobile, side-by-side on Desktop */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-start">
             
-            {/* LEFT COLUMN: Character Details & Step-by-Step Breakdown (7 Cols) */}
-            <div className={`lg:col-span-7 space-y-4 sm:space-y-5 ${mobileStudioView === "canvas" ? "hidden lg:block" : "block"}`}>
-              
-              {/* Character Header Showcase */}
-              <div className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-white border border-[#FFDDDD] shadow-xs space-y-3.5 sm:space-y-0 sm:flex sm:items-center sm:justify-between sm:gap-4">
-                <div className="flex items-center gap-3 sm:gap-4">
-                  {/* Big Character Box */}
-                  <div className="relative w-16 h-16 sm:w-22 sm:h-22 rounded-2xl sm:rounded-3xl bg-gradient-to-b from-[#FFF0EF] to-[#FFDDDD]/50 border-2 border-[#FFDDDD] flex items-center justify-center shadow-xs shrink-0">
-                    <span className="font-japanese font-black text-4xl sm:text-5xl text-[#293C3A]">
-                      {kanaData.character}
+            {/* CANVAS COLUMN: order-1 on Mobile (comes first!), 5 Cols on Desktop (order-2) */}
+            <div
+              className={`order-1 lg:order-2 lg:col-span-5 space-y-4 sm:space-y-5 ${
+                mobileStudioView === "steps" ? "hidden lg:block" : "block"
+              }`}
+            >
+              <div className="p-3.5 xs:p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-white border border-[#FFDDDD] shadow-xs flex flex-col items-center">
+                
+                {/* Header Title & Badges */}
+                <div className="text-center mb-2.5 sm:mb-3 w-full">
+                  <div className="flex items-center justify-between gap-2 px-1">
+                    <span className="px-2.5 py-0.5 rounded-full bg-[#D9EFEC] text-[#377770] text-[10px] sm:text-xs font-bold inline-flex items-center gap-1.5">
+                      <PenTool className="w-3.5 h-3.5" />
+                      Kanvas Genkōyōshi
+                    </span>
+                    <span className="text-[10px] sm:text-xs font-bold text-[#6F7775]">
+                      {kanaData.strokes} Total Goresan
                     </span>
                   </div>
-
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h2 className="text-xl sm:text-2xl font-black text-[#293C3A] font-mono lowercase">
-                        {currentItem.romaji}
-                      </h2>
-                      <button
-                        type="button"
-                        onClick={() => speakKana(kanaData.character)}
-                        title="Dengarkan pengucapan audio"
-                        className="p-1.5 rounded-full bg-[#D9EFEC] text-[#377770] hover:bg-[#55A9A0] hover:text-white transition-colors cursor-pointer"
-                      >
-                        <Volume2 className="w-4 h-4" />
-                      </button>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 mt-1">
-                      <span className="px-2 sm:px-2.5 py-0.5 rounded-full bg-[#55A9A0] text-white text-[10px] sm:text-[11px] font-bold">
-                        {currentItem.rowName}
-                      </span>
-                      <span className="px-2 sm:px-2.5 py-0.5 rounded-full bg-[#FFF0EF] text-[#293C3A] border border-[#FFDDDD] text-[10px] sm:text-[11px] font-bold">
-                        {kanaData.strokes} Goresan
-                      </span>
-                    </div>
-
-                    <p className="text-[11px] sm:text-xs text-[#6F7775] mt-1">
-                      Aksara:{" "}
-                      <span className="font-japanese font-bold text-[#293C3A]">
-                        {activeMainTab === "hiragana" ? currentItem.katakana.character : currentItem.hiragana.character}
-                      </span>{" "}
-                      ({activeMainTab === "hiragana" ? "Katakana" : "Hiragana"})
-                    </p>
-                  </div>
-                </div>
-
-                {/* Animation & Nav controls */}
-                <div className="flex items-center justify-between sm:justify-end gap-2 pt-2.5 sm:pt-0 border-t sm:border-t-0 border-[#FFDDDD]/40">
-                  <button
-                    type="button"
-                    onClick={() => setIsPlayingAnimation(!isPlayingAnimation)}
-                    className={`flex items-center gap-1.5 px-3 py-2 rounded-xl sm:rounded-2xl text-xs font-bold transition-all shadow-xs cursor-pointer ${
-                      isPlayingAnimation
-                        ? "bg-rose-500 text-white"
-                        : "bg-[#D9EFEC] text-[#377770] hover:bg-[#55A9A0] hover:text-white"
-                    }`}
-                  >
-                    {isPlayingAnimation ? (
-                      <>
-                        <Pause className="w-3.5 h-3.5" />
-                        <span>Jeda Animasi</span>
-                      </>
-                    ) : (
-                      <>
-                        <Play className="w-3.5 h-3.5 fill-current" />
-                        <span>Putar Animasi</span>
-                      </>
-                    )}
-                  </button>
-
-                  <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={handlePrevCharacter}
-                      className="p-2 rounded-xl bg-gray-100 hover:bg-[#FFF0EF] text-[#293C3A] transition-colors cursor-pointer"
-                      title="Karakter Sebelumnya"
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleNextCharacter}
-                      className="p-2 rounded-xl bg-gray-100 hover:bg-[#FFF0EF] text-[#293C3A] transition-colors cursor-pointer"
-                      title="Karakter Berikutnya"
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Calligraphy Notes & Pitfall Alerts */}
-              {(kanaData.handwritingNote || kanaData.pitfalls) && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
-                  {kanaData.handwritingNote && (
-                    <div className="p-3 sm:p-3.5 rounded-xl sm:rounded-2xl bg-[#FFF8F7] border border-[#FFDDDD] flex items-start gap-2.5">
-                      <Sparkles className="w-4 h-4 text-[#55A9A0] shrink-0 mt-0.5" />
-                      <div className="text-xs">
-                        <span className="font-bold text-[#293C3A] block">Kaidah Kaligrafi:</span>
-                        <p className="text-[#6F7775] mt-0.5 leading-relaxed">{kanaData.handwritingNote}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {kanaData.pitfalls && (
-                    <div className="p-3 sm:p-3.5 rounded-xl sm:rounded-2xl bg-amber-50/70 border border-amber-200 flex items-start gap-2.5">
-                      <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                      <div className="text-xs">
-                        <span className="font-bold text-amber-900 block">Perhatian Khusus:</span>
-                        <p className="text-amber-800 mt-0.5 leading-relaxed">{kanaData.pitfalls}</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* STEP-BY-STEP PROGRESSION CARDS (Standard Worksheet Style) */}
-              <div className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-white border border-[#FFDDDD] shadow-xs space-y-3.5 sm:space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-sm sm:text-base font-black text-[#293C3A] flex items-center gap-1.5 sm:gap-2">
-                      <Sparkles className="w-4 h-4 text-[#55A9A0]" />
-                      <span>Urutan Goresan & Bayang-bayang Menulis</span>
-                    </h3>
-                    <p className="text-[11px] sm:text-xs text-[#6F7775]">
-                      Setiap kotak menampilkan bayangan huruf lengkap, nomor awal (①), dan panah arah:
-                    </p>
-                  </div>
-                  <span className="text-[11px] sm:text-xs font-bold text-[#55A9A0]">
-                    {kanaData.strokes} Langkah
-                  </span>
-                </div>
-
-                <div className="space-y-2.5 sm:space-y-3">
-                  {kanaData.steps.map((step, idx) => {
-                    const isStepActive = animatingStep === step.stepNumber;
-                    return (
-                      <div
-                        key={idx}
-                        className={`p-3 sm:p-3.5 rounded-xl sm:rounded-2xl border transition-all flex items-start sm:items-center justify-between gap-2.5 sm:gap-3 ${
-                          isStepActive
-                            ? "bg-[#FFF0EF] border-[#55A9A0] shadow-xs ring-2 ring-[#55A9A0]/20"
-                            : "bg-[#FFF8F7]/50 border-[#FFDDDD]/60 hover:bg-[#FFF8F7]"
-                        }`}
-                      >
-                        <div className="flex items-start sm:items-center gap-2.5 sm:gap-3">
-                          {/* Mini Genkoyoushi diagram box with GHOST SHADOW and DIRECTION ARROW */}
-                          <StrokeStepVisualizer
-                            character={kanaData.character}
-                            step={step}
-                            currentStepIndex={idx}
-                            totalSteps={kanaData.steps.length}
-                            isActive={isStepActive}
-                            size="md"
-                          />
-
-                          {/* Step Explanation */}
-                          <div>
-                            <div className="flex flex-wrap items-center gap-1.5">
-                              <span className="w-4.5 h-4.5 sm:w-5 sm:h-5 rounded-full bg-[#D9EFEC] text-[#377770] font-black text-[10px] sm:text-xs flex items-center justify-center">
-                                {step.stepNumber}
-                              </span>
-                              <span className="text-xs font-bold text-[#293C3A]">
-                                Langkah {step.stepNumber}
-                              </span>
-                              {getStrokeTypeBadge(step.strokeType)}
-                            </div>
-                            <p className="text-[11px] sm:text-xs text-[#6F7775] mt-1 leading-relaxed">
-                              {step.tip}
-                            </p>
-                            <span className="text-[10px] sm:text-[11px] font-semibold text-[#55A9A0] block mt-0.5">
-                              Arah: {step.direction}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Example Words */}
-              <div className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-white border border-[#FFDDDD] shadow-xs space-y-3">
-                <h4 className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-[#6F7775]">
-                  Contoh Penggunaan Kata Praktis:
-                </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
-                  {currentItem.examples.map((ex, i) => (
-                    <div
-                      key={i}
-                      className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-[#FFF8F7] border border-[#FFDDDD]/60 flex items-center justify-between"
-                    >
-                      <div>
-                        <div className="flex items-center gap-1.5 sm:gap-2">
-                          <span className="font-japanese font-bold text-lg sm:text-xl text-[#293C3A]">
-                            {activeMainTab === "hiragana" ? ex.wordHiragana : ex.wordKatakana}
-                          </span>
-                          <span className="text-[11px] sm:text-xs font-bold text-[#55A9A0] font-mono">
-                            [{ex.romaji}]
-                          </span>
-                        </div>
-                        <p className="text-[11px] sm:text-xs text-[#6F7775] mt-0.5">{ex.meaning}</p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => speakKana(activeMainTab === "hiragana" ? ex.wordHiragana : ex.wordKatakana)}
-                        className="p-1.5 sm:p-2 rounded-xl bg-white hover:bg-[#D9EFEC] text-[#377770] transition-colors cursor-pointer"
-                        title="Dengar pengucapan kata"
-                      >
-                        <Volume2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* RIGHT COLUMN: Interactive Drawing & Tracing Canvas (5 Cols) */}
-            <div className={`lg:col-span-5 space-y-4 sm:space-y-5 ${mobileStudioView === "steps" ? "hidden lg:block" : "block"}`}>
-              <div className="p-3.5 xs:p-5 sm:p-6 rounded-2xl sm:rounded-3xl bg-white border border-[#FFDDDD] shadow-xs flex flex-col items-center">
-                <div className="text-center mb-3 sm:mb-4">
-                  <span className="px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full bg-[#D9EFEC] text-[#377770] text-[10px] sm:text-xs font-bold inline-flex items-center gap-1.5">
-                    <PenTool className="w-3.5 h-3.5" />
-                    Kanvas Kotak Genkōyōshi
-                  </span>
-                  <h3 className="text-base sm:text-lg font-black text-[#293C3A] mt-1.5 sm:mt-2">
+                  <h3 className="text-base sm:text-lg font-black text-[#293C3A] mt-1.5">
                     Latihan Menulis Huruf {kanaData.character}
                   </h3>
-                  <p className="text-[11px] sm:text-xs text-[#6F7775] mt-0.5 max-w-xs">
-                    Tiru urutan goresan atau aktifkan tombol &quot;Jiplak&quot; untuk panduan bayangan.
-                  </p>
                 </div>
 
-                {/* Canvas Component with full mobile responsiveness & bayang-bayang */}
+                {/* REAL-TIME STROKE STEP GUIDANCE BAR (Directly Connected to Canvas!) */}
+                <div className="w-full max-w-[280px] xs:max-w-[310px] sm:max-w-[340px] mb-3 space-y-2">
+                  {/* Step selection pills */}
+                  <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none justify-center">
+                    {kanaData.steps.map((step) => {
+                      const isActive = currentActiveStep === step.stepNumber;
+                      const isCompleted = canvasStrokeCount >= step.stepNumber;
+                      return (
+                        <button
+                          key={step.stepNumber}
+                          type="button"
+                          onClick={() => {
+                            setIsPlayingAnimation(false);
+                            setSelectedStepNumber(step.stepNumber);
+                          }}
+                          className={`flex items-center gap-1 px-2.5 py-1 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                            isActive
+                              ? "bg-rose-500 text-white shadow-xs ring-2 ring-rose-300 scale-105"
+                              : isCompleted
+                              ? "bg-[#D9EFEC] text-[#377770] border border-[#55A9A0]/50"
+                              : "bg-gray-100 text-[#6F7775] hover:bg-gray-200"
+                          }`}
+                        >
+                          <span>{isCompleted && !isActive ? "✓" : step.stepNumber}</span>
+                          <span className="text-[10px] font-medium hidden xs:inline">
+                            {step.direction.split(" ")[0]}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Active Step Real-Time Instruction Banner */}
+                  {activeStepData && (
+                    <div className="p-2 sm:p-2.5 rounded-xl bg-gradient-to-r from-rose-50 to-[#FFF0EF] border border-rose-200 flex items-start gap-2 animate-in fade-in duration-200">
+                      <span className="w-5 h-5 rounded-full bg-rose-500 text-white text-[10px] font-black flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
+                        {activeStepData.stepNumber}
+                      </span>
+                      <div className="text-left text-xs flex-1 min-w-0">
+                        <div className="flex items-center justify-between gap-1 flex-wrap">
+                          <span className="font-bold text-rose-900 text-[11px] sm:text-xs">
+                            Arah: {activeStepData.direction}
+                          </span>
+                          {getStrokeTypeBadge(activeStepData.strokeType)}
+                        </div>
+                        <p className="text-[10px] sm:text-[11px] text-[#6F7775] mt-0.5 leading-snug line-clamp-2">
+                          {activeStepData.tip}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Layered Stroke Order Canvas */}
                 <StrokeOrderCanvas
                   ref={canvasRef}
                   referenceCharacter={kanaData.character}
                   steps={kanaData.steps}
-                  width={310}
-                  height={310}
+                  activeStep={currentActiveStep}
                   onStrokeEnd={handleStrokeEnd}
+                  onStrokeCountChange={(count) => {
+                    setCanvasStrokeCount(count);
+                    setSelectedStepNumber(null);
+                  }}
                 />
 
-                {/* Similarity Evaluation Button & Auto-Check Controls */}
+                {/* Similarity Evaluation & Auto-Check Controls */}
                 <div className="mt-3 sm:mt-4 w-full max-w-[280px] xs:max-w-[310px] sm:max-w-[340px] space-y-2 sm:space-y-2.5">
                   {/* Auto-Check Toggle Bar */}
                   <div className="flex items-center justify-between px-2.5 py-1.5 rounded-xl bg-white border border-[#FFDDDD] text-xs">
@@ -594,7 +564,7 @@ export default function WritingStudio() {
                     </button>
                   </div>
 
-                  {/* Manual Button (if Auto-Check disabled or instant check) */}
+                  {/* Manual Button */}
                   <button
                     type="button"
                     onClick={handleEvaluateDrawing}
@@ -632,7 +602,7 @@ export default function WritingStudio() {
                         {similarityScore.description}
                       </p>
 
-                      {/* Fast Next Button if score >= 70% */}
+                      {/* Next Character Shortcut if score >= 70% */}
                       {similarityScore.score >= 70 && (
                         <button
                           type="button"
@@ -648,28 +618,166 @@ export default function WritingStudio() {
                 </div>
               </div>
 
-              {/* Quick Writing Tips Reminder Card */}
-              <div className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-gradient-to-br from-[#FFF0EF] to-white border border-[#FFDDDD] space-y-2.5 sm:space-y-3">
+              {/* Muscle Memory Tips Card */}
+              <div className="p-3.5 sm:p-4 rounded-2xl bg-gradient-to-br from-[#FFF0EF] to-white border border-[#FFDDDD] space-y-2">
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-[#55A9A0]" />
                   <h4 className="text-[11px] sm:text-xs font-black uppercase tracking-wider text-[#293C3A]">
                     Prinsip Memori Otot Menulis
                   </h4>
                 </div>
-                <ul className="text-[11px] sm:text-xs text-[#6F7775] space-y-1.5 sm:space-y-2 leading-relaxed">
-                  <li className="flex items-start gap-1.5 sm:gap-2">
+                <ul className="text-[11px] sm:text-xs text-[#6F7775] space-y-1.5 leading-relaxed">
+                  <li className="flex items-start gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#55A9A0] shrink-0 mt-1.5" />
-                    <span>Goreskan garis dengan kecepatan konstan tanpa ragu.</span>
+                    <span>Tarik garis dengan kecepatan konstan tanpa ragu.</span>
                   </li>
-                  <li className="flex items-start gap-1.5 sm:gap-2">
+                  <li className="flex items-start gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#55A9A0] shrink-0 mt-1.5" />
                     <span>Gunakan garis putus-putus sebagai patokan simetri kiri dan kanan.</span>
                   </li>
-                  <li className="flex items-start gap-1.5 sm:gap-2">
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#55A9A0] shrink-0 mt-1.5" />
-                    <span>Ucapkan bunyinya secara lantang sambil menggoreskan pena.</span>
-                  </li>
                 </ul>
+              </div>
+            </div>
+
+            {/* WORKSHEET & NOTES COLUMN: order-2 on Mobile, 7 Cols on Desktop (order-1) */}
+            <div
+              className={`order-2 lg:order-1 lg:col-span-7 space-y-4 sm:space-y-5 ${
+                mobileStudioView === "canvas" ? "hidden lg:block" : "block"
+              }`}
+            >
+              {/* STEP-BY-STEP PROGRESSION CARDS (Detailed Worksheet) */}
+              <div className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-white border border-[#FFDDDD] shadow-xs space-y-3.5 sm:space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm sm:text-base font-black text-[#293C3A] flex items-center gap-1.5 sm:gap-2">
+                      <Sparkles className="w-4 h-4 text-[#55A9A0]" />
+                      <span>Urutan Goresan & Worksheet Lengkap</span>
+                    </h3>
+                    <p className="text-[11px] sm:text-xs text-[#6F7775]">
+                      Nomor lingkaran merah (①) menunjukkan titik awal, panah menunjukkan arah tarikan garis:
+                    </p>
+                  </div>
+                  <span className="text-[11px] sm:text-xs font-bold text-[#55A9A0] shrink-0">
+                    {kanaData.strokes} Langkah
+                  </span>
+                </div>
+
+                <div className="space-y-2.5 sm:space-y-3">
+                  {kanaData.steps.map((step, idx) => {
+                    const isStepActive = currentActiveStep === step.stepNumber;
+                    return (
+                      <div
+                        key={idx}
+                        onClick={() => {
+                          setIsPlayingAnimation(false);
+                          setSelectedStepNumber(step.stepNumber);
+                        }}
+                        className={`p-3 sm:p-3.5 rounded-xl sm:rounded-2xl border transition-all flex items-start sm:items-center justify-between gap-2.5 sm:gap-3 cursor-pointer ${
+                          isStepActive
+                            ? "bg-[#FFF0EF] border-[#55A9A0] shadow-xs ring-2 ring-[#55A9A0]/20"
+                            : "bg-[#FFF8F7]/50 border-[#FFDDDD]/60 hover:bg-[#FFF8F7]"
+                        }`}
+                      >
+                        <div className="flex items-start sm:items-center gap-2.5 sm:gap-3">
+                          {/* Mini Genkōyōshi diagram with SVG arrow */}
+                          <StrokeStepVisualizer
+                            character={kanaData.character}
+                            step={step}
+                            currentStepIndex={idx}
+                            totalSteps={kanaData.steps.length}
+                            isActive={isStepActive}
+                            size="md"
+                          />
+
+                          {/* Step Explanation */}
+                          <div>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <span className="w-4.5 h-4.5 sm:w-5 sm:h-5 rounded-full bg-[#D9EFEC] text-[#377770] font-black text-[10px] sm:text-xs flex items-center justify-center">
+                                {step.stepNumber}
+                              </span>
+                              <span className="text-xs font-bold text-[#293C3A]">
+                                Langkah {step.stepNumber}
+                              </span>
+                              {getStrokeTypeBadge(step.strokeType)}
+                            </div>
+                            <p className="text-[11px] sm:text-xs text-[#6F7775] mt-1 leading-relaxed">
+                              {step.tip}
+                            </p>
+                            <span className="text-[10px] sm:text-[11px] font-semibold text-[#55A9A0] block mt-0.5">
+                              Arah: {step.direction}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Calligraphy Notes & Pitfall Alerts */}
+              {(kanaData.handwritingNote || kanaData.pitfalls) && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
+                  {kanaData.handwritingNote && (
+                    <div className="p-3 sm:p-3.5 rounded-xl sm:rounded-2xl bg-[#FFF8F7] border border-[#FFDDDD] flex items-start gap-2.5">
+                      <Sparkles className="w-4 h-4 text-[#55A9A0] shrink-0 mt-0.5" />
+                      <div className="text-xs">
+                        <span className="font-bold text-[#293C3A] block">Kaidah Kaligrafi:</span>
+                        <p className="text-[#6F7775] mt-0.5 leading-relaxed">
+                          {kanaData.handwritingNote}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {kanaData.pitfalls && (
+                    <div className="p-3 sm:p-3.5 rounded-xl sm:rounded-2xl bg-amber-50/70 border border-amber-200 flex items-start gap-2.5">
+                      <AlertCircle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                      <div className="text-xs">
+                        <span className="font-bold text-amber-900 block">Perhatian Khusus:</span>
+                        <p className="text-amber-800 mt-0.5 leading-relaxed">{kanaData.pitfalls}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Example Words */}
+              <div className="p-4 sm:p-5 rounded-2xl sm:rounded-3xl bg-white border border-[#FFDDDD] shadow-xs space-y-3">
+                <h4 className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-[#6F7775]">
+                  Contoh Kosakata Praktis:
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3">
+                  {currentItem.examples.map((ex, i) => (
+                    <div
+                      key={i}
+                      className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-[#FFF8F7] border border-[#FFDDDD]/60 flex items-center justify-between"
+                    >
+                      <div>
+                        <div className="flex items-center gap-1.5 sm:gap-2">
+                          <span className="font-japanese font-bold text-lg sm:text-xl text-[#293C3A]">
+                            {activeMainTab === "hiragana" ? ex.wordHiragana : ex.wordKatakana}
+                          </span>
+                          <span className="text-[11px] sm:text-xs font-bold text-[#55A9A0] font-mono">
+                            [{ex.romaji}]
+                          </span>
+                        </div>
+                        <p className="text-[11px] sm:text-xs text-[#6F7775] mt-0.5">{ex.meaning}</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          speakKana(
+                            activeMainTab === "hiragana" ? ex.wordHiragana : ex.wordKatakana
+                          )
+                        }
+                        className="p-1.5 sm:p-2 rounded-xl bg-white hover:bg-[#D9EFEC] text-[#377770] transition-colors cursor-pointer"
+                        title="Dengar pengucapan kata"
+                      >
+                        <Volume2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
@@ -792,7 +900,7 @@ export default function WritingStudio() {
             </div>
           </div>
 
-          {/* Similar Characters Matrix (Shi vs Tsu, So vs N, etc.) */}
+          {/* Similar Characters Matrix */}
           <div className="space-y-3.5 sm:space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-2">
               <h3 className="text-base sm:text-lg font-black text-[#293C3A] flex items-center gap-2">

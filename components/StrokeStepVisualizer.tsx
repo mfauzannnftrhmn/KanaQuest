@@ -30,7 +30,8 @@ export default function StrokeStepVisualizer({
   }[size];
 
   // Unique marker id to avoid SVG conflicts
-  const markerId = `arrow-${character}-${step.stepNumber}`;
+  const reactId = React.useId().replace(/:/g, "_");
+  const markerId = `arrow-${character}-${step.stepNumber}-${reactId}`;
 
   // Calculate arrow end point slightly pulled back so marker head fits inside
   const dx = step.endPoint.x - step.startPoint.x;
